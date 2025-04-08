@@ -63,46 +63,17 @@ class SmarthomeMqttSensor(SensorEntity):
 
     async def _message_received(self, msg) -> None:
         """Handle new MQTT messages and update the sensor state."""
-        payload = msg.payload.decode("utf-8")
+        payload = msg.payload
+        if isinstance(payload, bytes):
+            payload = payload.decode("utf-8")
+        # Now payload is a string.
         _LOGGER.debug("Sensor %s received payload: %s",
                       self._unique_id, payload)
         if self._value_template:
             # NOTE: Using eval for template processing is not secure.
-            # In production, consider using Home Assistant's secure template rendering.
+            # Consider replacing this with Home Assistant's secure template rendering.
             try:
                 payload = eval(self._value_template, {"value": payload})
             except Exception as err:
                 _LOGGER.error(
                     "Error processing value_template for sensor %s: %s", self._unique_id, err)
-        self._state = payload
-        self.async_write_ha_state()
-
-    async def async_will_remove_from_hass(self) -> None:
-        """Clean up MQTT subscription when the sensor is removed."""
-        if self._unsubscribe_mqtt is not None:
-            self._unsubscribe_mqtt()
-
-    @property
-    def name(self) -> str:
-        """Return the name of the sensor."""
-        return self._name
-
-    @property
-    def unique_id(self) -> str:
-        """Return the unique ID of the sensor."""
-        return self._unique_id
-
-    @property
-    def state(self):
-        """Return the current state of the sensor."""
-        return self._state
-
-    @property
-    def device_info(self):
-        """Return device information for the sensor."""
-        return {
-            "identifiers": {(DEFAULT_RELAY_DEVICE["manufacturer"], f"modules.{self._module_id}")},
-            "name": DEFAULT_RELAY_DEVICE["name"],
-            "manufacturer": DEFAULT_RELAY_DEVICE["manufacturer"],
-            "model": DEFAULT_RELAY_DEVICE["model"],
-        }
