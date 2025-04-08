@@ -18,10 +18,10 @@ async def async_setup_entry(
     """
     Set up Smarthome sensors for a module based on the config entry.
 
-    The configuration must contain:
-     - module_id: The index of the module.
-     - relay_count: How many relay sensors to create.
-     - value_template: (optional) Template for processing MQTT payloads.
+    Expected configuration:
+      - module_id: The index of the module.
+      - relay_count: How many relay sensors to create.
+      - value_template: (optional) Template for processing MQTT payloads.
     """
     module_id = entry.data["module_id"]
     relay_count = entry.data["relay_count"]
@@ -69,11 +69,11 @@ class SmarthomeMqttSensor(SensorEntity):
         _LOGGER.debug("Sensor %s received payload: %s",
                       self._unique_id, payload)
         if self._value_template:
-            # Use Home Assistant's secure template engine instead of eval.
-            # The default template "{{ value }}" will simply return the original payload.
-            from homeassistant.helpers.template import Template
             try:
-                payload = await Template(self._value_template, hass=self._hass).async_render({"value": payload})
+                # Use Home Assistant's secure template engine.
+                from homeassistant.helpers.template import Template
+                tmpl = Template(self._value_template, hass=self._hass)
+                payload = await tmpl.async_render({"value": payload})
             except Exception as err:
                 _LOGGER.error(
                     "Error processing value_template for sensor %s: %s", self._unique_id, err)
