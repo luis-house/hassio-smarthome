@@ -2,7 +2,7 @@
 import logging
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.components.mqtt import async_subscribe, MQTTMessage
+from homeassistant.components.mqtt import async_subscribe
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
@@ -10,6 +10,7 @@ from homeassistant.config_entries import ConfigEntry
 from .const import DEFAULT_VALUE_TEMPLATE, DEFAULT_RELAY_DEVICE, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
+
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
@@ -28,9 +29,11 @@ async def async_setup_entry(
 
     sensors = []
     for relay_index in range(relay_count):
-        sensor = SmarthomeMqttSensor(hass, module_id, relay_index, value_template)
+        sensor = SmarthomeMqttSensor(
+            hass, module_id, relay_index, value_template)
         sensors.append(sensor)
     async_add_entities(sensors)
+
 
 class SmarthomeMqttSensor(SensorEntity):
     """Representation of a Smarthome MQTT sensor for a specific relay in a module."""
@@ -55,19 +58,22 @@ class SmarthomeMqttSensor(SensorEntity):
             self._message_received,
             qos=1,
         )
-        _LOGGER.debug("Sensor %s subscribed to topic: %s", self._unique_id, self._state_topic)
+        _LOGGER.debug("Sensor %s subscribed to topic: %s",
+                      self._unique_id, self._state_topic)
 
-    async def _message_received(self, msg: MQTTMessage) -> None:
+    async def _message_received(self, msg) -> None:
         """Handle new MQTT messages and update the sensor state."""
         payload = msg.payload.decode("utf-8")
-        _LOGGER.debug("Sensor %s received payload: %s", self._unique_id, payload)
+        _LOGGER.debug("Sensor %s received payload: %s",
+                      self._unique_id, payload)
         if self._value_template:
             # NOTE: Using eval for template processing is not secure.
-            # Consider using Home Assistant's secure template rendering instead.
+            # In production, consider using Home Assistant's secure template rendering.
             try:
                 payload = eval(self._value_template, {"value": payload})
             except Exception as err:
-                _LOGGER.error("Error processing value_template for sensor %s: %s", self._unique_id, err)
+                _LOGGER.error(
+                    "Error processing value_template for sensor %s: %s", self._unique_id, err)
         self._state = payload
         self.async_write_ha_state()
 
@@ -83,7 +89,7 @@ class SmarthomeMqttSensor(SensorEntity):
 
     @property
     def unique_id(self) -> str:
-        """Return the unique id of the sensor."""
+        """Return the unique ID of the sensor."""
         return self._unique_id
 
     @property

@@ -11,6 +11,7 @@ DATA_SCHEMA = vol.Schema({
     vol.Optional("value_template", default=DEFAULT_VALUE_TEMPLATE): cv.string,
 })
 
+
 class SmarthomeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for the Smarthome integration."""
     VERSION = 1
