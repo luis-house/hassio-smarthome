@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
 
-from .const import DEFAULT_VALUE_TEMPLATE, DEFAULT_RELAY_DEVICE, DOMAIN
+from .const import DEFAULT_VALUE_TEMPLATE, DEFAULT_RELAY_DEVICE, DEFAULT_BUTTON_DEVICE, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,38 +16,64 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ):
     """
-    Set up Smarthome sensors for a module based on the config entry.
+    Set up Smarthome sensors for a module (Hub) based on the config entry.
 
-    Expected configuration:
+    Expected configuration keys:
       - module_id: The index of the module.
       - relay_count: How many relay sensors to create.
+      - button_count: How many button sensors to create.
       - value_template: (optional) Template for processing MQTT payloads.
     """
     module_id = entry.data["module_id"]
-    relay_count = entry.data["relay_count"]
+    relay_count = entry.data.get("relay_count", 0)
+    button_count = entry.data.get("button_count", 0)
     value_template = entry.data.get("value_template", DEFAULT_VALUE_TEMPLATE)
 
     sensors = []
+    # Create relay sensors.
     for relay_index in range(relay_count):
         sensor = SmarthomeMqttSensor(
-            hass, module_id, relay_index, value_template)
+            hass, module_id, relay_index, "relay", value_template
+        )
+        sensors.append(sensor)
+    # Create button sensors.
+    for button_index in range(button_count):
+        sensor = SmarthomeMqttSensor(
+            hass, module_id, button_index, "button", value_template
+        )
         sensors.append(sensor)
     async_add_entities(sensors)
 
 
 class SmarthomeMqttSensor(SensorEntity):
-    """Representation of a Smarthome MQTT sensor for a specific relay in a module."""
+    """Representation of a Smarthome MQTT sensor for a specific device in a module (Hub)."""
 
-    def __init__(self, hass: HomeAssistant, module_id: int, relay_index: int, value_template: str) -> None:
-        """Initialize the sensor for a given module and relay index."""
+    def __init__(self, hass: HomeAssistant, module_id: int, sensor_index: int, device_type: str, value_template: str) -> None:
+        """
+        Initialize the sensor for a given module and sensor index.
+
+        :param hass: Home Assistant object.
+        :param module_id: The ID of the module/hub.
+        :param sensor_index: The index of the sensor within that type.
+        :param device_type: "relay" or "button".
+        :param value_template: Template for processing the MQTT payload.
+        """
         self._hass = hass
         self._module_id = module_id
-        self._relay_index = relay_index
+        self._sensor_index = sensor_index
+        self._device_type = device_type  # "relay" or "button"
         self._value_template = value_template
         self._state = None
-        self._unique_id = f"smarthome.modules.{module_id}.relays.{relay_index}"
-        self._state_topic = f"modules/{module_id}/relays/{relay_index}"
-        self._name = f"Module {module_id} Relay {relay_index}"
+
+        if self._device_type == "relay":
+            self._unique_id = f"smarthome.modules.{module_id}.relays.{sensor_index}"
+            self._state_topic = f"modules/{module_id}/relays/{sensor_index}"
+            self._name = f"Module {module_id} Relay {sensor_index}"
+        else:
+            self._unique_id = f"smarthome.modules.{module_id}.buttons.{sensor_index}"
+            self._state_topic = f"modules/{module_id}/buttons/{sensor_index}"
+            self._name = f"Module {module_id} Button {sensor_index}"
+
         self._unsubscribe_mqtt = None
 
     async def async_added_to_hass(self) -> None:
@@ -70,7 +96,6 @@ class SmarthomeMqttSensor(SensorEntity):
                       self._unique_id, payload)
         if self._value_template:
             try:
-                # Use Home Assistant's secure template engine.
                 from homeassistant.helpers.template import Template
                 tmpl = Template(self._value_template, hass=self._hass)
                 payload = await tmpl.async_render({"value": payload})
@@ -103,9 +128,13 @@ class SmarthomeMqttSensor(SensorEntity):
     @property
     def device_info(self):
         """Return device information for the sensor."""
+        if self._device_type == "relay":
+            device = DEFAULT_RELAY_DEVICE
+        else:
+            device = DEFAULT_BUTTON_DEVICE
         return {
-            "identifiers": {(DEFAULT_RELAY_DEVICE["manufacturer"], f"modules.{self._module_id}")},
-            "name": DEFAULT_RELAY_DEVICE["name"],
-            "manufacturer": DEFAULT_RELAY_DEVICE["manufacturer"],
-            "model": DEFAULT_RELAY_DEVICE["model"],
+            "identifiers": {(device["manufacturer"], f"modules.{self._module_id}")},
+            "name": device["name"],
+            "manufacturer": device["manufacturer"],
+            "model": device["model"],
         }
