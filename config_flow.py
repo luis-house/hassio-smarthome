@@ -8,8 +8,8 @@ from .const import DOMAIN, DEFAULT_VALUE_TEMPLATE
 DATA_SCHEMA = vol.Schema({
     vol.Required("module_id"): vol.Coerce(int),
     # Specify counts independently – one Hub (module) can have a number of relays and/or buttons.
-    vol.Optional("relay_count", default=0): vol.Coerce(int),
-    vol.Optional("button_count", default=0): vol.Coerce(int),
+    vol.Optional("relay_count", default=8): vol.Coerce(int),
+    vol.Optional("button_count", default=8): vol.Coerce(int),
     vol.Optional("value_template", default=DEFAULT_VALUE_TEMPLATE): cv.string,
 })
 

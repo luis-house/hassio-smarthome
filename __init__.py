@@ -4,7 +4,7 @@ from .const import DOMAIN
 from homeassistant.const import Platform
 
 
-PLATFORMS: list[Platform] = [Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.SWITCH]
 
 async def async_setup(hass, config):
     """Set up the integration from YAML (not used, but required)."""
