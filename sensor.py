@@ -16,7 +16,7 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ):
     """
-    Set up Smarthome sensors for a module (Hub) based on the config entry.
+    Set up Smarthome sensor entities for the module (Hub) based on the config entry.
 
     Expected configuration keys:
       - module_id: The index of the module.
@@ -30,17 +30,15 @@ async def async_setup_entry(
     value_template = entry.data.get("value_template", DEFAULT_VALUE_TEMPLATE)
 
     sensors = []
-    # Create relay sensors.
+    # Create relay sensor entities.
     for relay_index in range(relay_count):
         sensor = SmarthomeMqttSensor(
-            hass, module_id, relay_index, "relay", value_template
-        )
+            hass, module_id, relay_index, "relay", value_template)
         sensors.append(sensor)
-    # Create button sensors.
+    # Create button sensor entities.
     for button_index in range(button_count):
         sensor = SmarthomeMqttSensor(
-            hass, module_id, button_index, "button", value_template
-        )
+            hass, module_id, button_index, "button", value_template)
         sensors.append(sensor)
     async_add_entities(sensors)
 
@@ -98,7 +96,12 @@ class SmarthomeMqttSensor(SensorEntity):
             try:
                 from homeassistant.helpers.template import Template
                 tmpl = Template(self._value_template, hass=self._hass)
-                payload = await tmpl.async_render({"value": payload})
+                # Call async_render. Check if the result is awaitable.
+                result = tmpl.async_render({"value": payload})
+                if hasattr(result, '__await__'):
+                    payload = await result
+                else:
+                    payload = result
             except Exception as err:
                 _LOGGER.error(
                     "Error processing value_template for sensor %s: %s", self._unique_id, err)
@@ -128,10 +131,7 @@ class SmarthomeMqttSensor(SensorEntity):
     @property
     def device_info(self):
         """Return device information for the sensor."""
-        if self._device_type == "relay":
-            device = DEFAULT_RELAY_DEVICE
-        else:
-            device = DEFAULT_BUTTON_DEVICE
+        device = DEFAULT_RELAY_DEVICE if self._device_type == "relay" else DEFAULT_BUTTON_DEVICE
         return {
             "identifiers": {(device["manufacturer"], f"modules.{self._module_id}")},
             "name": device["name"],
