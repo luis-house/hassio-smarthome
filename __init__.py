@@ -32,3 +32,8 @@ async def async_migrate_entry(hass, entry):
     #     hass.config_entries.async_update_entry(entry)
     # return True 
     return True
+
+async def async_get_options_flow(config_entry):
+    """Return the options flow for the hassio_smarthome integration."""
+    from .options_flow import SmarthomeOptionsFlow
+    return SmarthomeOptionsFlow(config_entry)
