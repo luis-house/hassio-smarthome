@@ -96,12 +96,13 @@ class SmarthomeMqttSensor(SensorEntity):
             try:
                 from homeassistant.helpers.template import Template
                 tmpl = Template(self._value_template, hass=self._hass)
-                # Call async_render. Check if the result is awaitable.
-                result = tmpl.async_render({"value": payload})
-                if hasattr(result, '__await__'):
-                    payload = await result
-                else:
-                    payload = result
+                # Attempt to render using async_render:
+                tmpl_result = tmpl.async_render({"value": payload})
+                try:
+                    payload = await tmpl_result
+                except TypeError:
+                    # If tmpl_result is not awaitable, use the result directly.
+                    payload = tmpl_result
             except Exception as err:
                 _LOGGER.error(
                     "Error processing value_template for sensor %s: %s", self._unique_id, err)
