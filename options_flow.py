@@ -46,10 +46,11 @@ class SmarthomeOptionsFlow(config_entries.OptionsFlow):
                 _LOGGER.error("Error dumping mapping to YAML: %s", err)
                 default_mapping = DEFAULT_MAPPING_YAML
 
-        # Use the text selector with multiline enabled
-        schema = vol.Schema(
-            {vol.Required("mapping", default=default_mapping): cv.string}
-        )
+        # Define the schema solely with the TextSelector.
+        schema = vol.Schema({
+            vol.Required("mapping", default=default_mapping):
+                selector.TextSelector({"multiline": True})
+        })
 
         if user_input is not None:
             mapping_str = user_input.get("mapping")
