@@ -52,7 +52,6 @@ class SmarthomeOptionsFlow(config_entries.OptionsFlow):
                     "multiline": True,
                     "rows": 10,  # Optional: specify a preferred number of rows
                     "placeholder": DEFAULT_MAPPING_YAML,
-                    "mode": "yaml",  # Use YAML mode for better formatting
                 })
         })
 
