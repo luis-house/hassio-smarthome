@@ -1,21 +1,8 @@
-"""
-Options Flow for the Smarthome custom integration.
-
-Allows editing the button-to-relay mapping using a YAML‐friendly syntax.
-The mapping should be entered as a YAML dictionary. For example:
-
-  12: 4
-  15: [4, 5]
-
-If no mapping is currently set, a default template is provided.
-"""
-
 import logging
 import yaml
-
 import voluptuous as vol
-import homeassistant.helpers.config_validation as cv
 from homeassistant import config_entries
+from homeassistant.helpers import selector  # New import for selectors
 
 from .const import DOMAIN
 
@@ -58,9 +45,16 @@ class SmarthomeOptionsFlow(config_entries.OptionsFlow):
                 _LOGGER.error("Error dumping mapping to YAML: %s", err)
                 default_mapping = DEFAULT_MAPPING_YAML
 
-        schema = vol.Schema(
-            {vol.Required("mapping", default=default_mapping): cv.string}
-        )
+        # Use the text selector with multiline enabled
+        schema = vol.Schema({
+            vol.Required("mapping", default=default_mapping):
+                selector.TextSelector({
+                    "multiline": True,
+                    "rows": 10,  # Optional: specify a preferred number of rows
+                    "placeholder": DEFAULT_MAPPING_YAML,
+                    "mode": "yaml",  # Use YAML mode for better formatting
+                })
+        })
 
         if user_input is not None:
             mapping_str = user_input.get("mapping")
