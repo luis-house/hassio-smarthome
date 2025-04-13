@@ -2,6 +2,7 @@
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 from homeassistant import config_entries
+from homeassistant.core import callback
 
 from .const import DOMAIN, DEFAULT_VALUE_TEMPLATE
 
@@ -17,6 +18,13 @@ DATA_SCHEMA = vol.Schema({
 class SmarthomeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for the Smarthome integration."""
     VERSION = 1
+
+    @staticmethod
+    @callback
+    async def async_get_options_flow(config_entry):
+        """Return the options flow for the hassio_smarthome integration."""
+        from .options_flow import SmarthomeOptionsFlow
+        return SmarthomeOptionsFlow(config_entry)
 
     async def async_step_user(self, user_input=None):
         """Handle the initial step of the config flow."""
