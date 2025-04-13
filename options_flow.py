@@ -50,8 +50,8 @@ class SmarthomeOptionsFlow(config_entries.OptionsFlow):
             vol.Required("mapping", default=default_mapping):
                 selector.TextSelector({
                     "multiline": True,
-                    "rows": 10,  # Optional: specify a preferred number of rows
-                    "placeholder": DEFAULT_MAPPING_YAML,
+                    # "rows": 10,  # Optional: specify a preferred number of rows
+                    # "placeholder": DEFAULT_MAPPING_YAML,
                 })
         })
 
