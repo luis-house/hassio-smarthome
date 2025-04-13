@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
 
-from .const import DEFAULT_VALUE_TEMPLATE, DEFAULT_RELAY_DEVICE, DEFAULT_BUTTON_DEVICE, DOMAIN
+from .const import DEFAULT_VALUE_TEMPLATE, DEFAULT_RELAY_DEVICE, DEFAULT_BUTTON_DEVICE
 
 _LOGGER = logging.getLogger(__name__)
 

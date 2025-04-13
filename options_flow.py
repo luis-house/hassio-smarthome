@@ -22,7 +22,7 @@ class SmarthomeOptionsFlow(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
+        self.options = config_entry.options
 
     async def async_step_init(self, user_input=None):
         """Manage the options flow start."""
@@ -33,7 +33,7 @@ class SmarthomeOptionsFlow(config_entries.OptionsFlow):
         errors = {}
 
         # Determine the default mapping YAML to display.
-        current_mapping = self.config_entry.options.get("mapping")
+        current_mapping = self.options.get("mapping")
         if current_mapping is None:
             default_mapping = DEFAULT_MAPPING_YAML
         else:
