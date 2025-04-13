@@ -2,7 +2,11 @@ import logging
 import yaml
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.helpers import selector  # New import for selectors
+from homeassistant.helpers.selector import (
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
+)
 import homeassistant.helpers.config_validation as cv
 
 from .const import DOMAIN
@@ -46,11 +50,15 @@ class SmarthomeOptionsFlow(config_entries.OptionsFlow):
                 _LOGGER.error("Error dumping mapping to YAML: %s", err)
                 default_mapping = DEFAULT_MAPPING_YAML
 
-        # Define the schema solely with the TextSelector.
-        schema = vol.Schema({
-            vol.Required("mapping", default=default_mapping):
-                selector.TextSelector({"multiline": True})
-        })
+        # Use the text selector with multiline enabled
+        schema = vol.Schema(
+            {vol.Required("mapping", default=default_mapping): TextSelector(
+                TextSelectorConfig(
+                    type=TextSelectorType.TEXT,
+                    multiline=True,
+                )
+            )}
+        )
 
         if user_input is not None:
             mapping_str = user_input.get("mapping")
