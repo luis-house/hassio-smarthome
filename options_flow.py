@@ -3,6 +3,7 @@ import yaml
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.helpers import selector  # New import for selectors
+import homeassistant.helpers.config_validation as cv
 
 from .const import DOMAIN
 
@@ -46,14 +47,9 @@ class SmarthomeOptionsFlow(config_entries.OptionsFlow):
                 default_mapping = DEFAULT_MAPPING_YAML
 
         # Use the text selector with multiline enabled
-        schema = vol.Schema({
-            vol.Required("mapping", default=default_mapping):
-                selector.TextSelector({
-                    "multiline": True,
-                    # "rows": 10,  # Optional: specify a preferred number of rows
-                    # "placeholder": DEFAULT_MAPPING_YAML,
-                })
-        })
+        schema = vol.Schema(
+            {vol.Required("mapping", default=default_mapping): cv.string}
+        )
 
         if user_input is not None:
             mapping_str = user_input.get("mapping")
