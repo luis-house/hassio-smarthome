@@ -61,7 +61,7 @@ class SmarthomeMqttLight(LightEntity):
         # Use the same state topic as the sensor.
         self._state_topic = f"modules/{module_id}/relays/{relay_index}"
         # Define a new command topic for publishing on/off commands.
-        self._command_topic = f"modules/{module_id}/relays/{relay_index}/set"
+        self._command_topic = f"modules/{module_id}/relays/{relay_index}"
         self._name = f"Module {module_id} Light {relay_index}"
 
         self._unsubscribe_mqtt = None
