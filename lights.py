@@ -19,7 +19,7 @@ async def async_setup_entry(
     Set up Smarthome light entities for the module (Hub) based on the config entry.
 
     Expected configuration keys:
-      - module_id: The index of the module.
+      - module_id: The ID of the module.
       - relay_count: How many relay lights to create.
       - value_template: (optional) Template for processing MQTT payloads.
     """
@@ -30,8 +30,7 @@ async def async_setup_entry(
     lights = []
     # Create relay light entities.
     for relay_index in range(relay_count):
-        light = SmarthomeMqttLight(
-            hass, module_id, relay_index, value_template)
+        light = SmarthomeMqttLight(hass, module_id, relay_index, value_template)
         lights.append(light)
     async_add_entities(lights)
 
@@ -52,7 +51,7 @@ class SmarthomeMqttLight(LightEntity):
         self._module_id = module_id
         self._relay_index = relay_index
         self._value_template = value_template
-        self._state = None
+        self._state = False
 
         self._unique_id = f"smarthome.modules.{module_id}.lights.{relay_index}"
         self._state_topic = f"modules/{module_id}/relays/{relay_index}"
@@ -69,16 +68,15 @@ class SmarthomeMqttLight(LightEntity):
             self._message_received,
             qos=1,
         )
-        _LOGGER.debug("Light %s subscribed to topic: %s",
-                      self._unique_id, self._state_topic)
+        _LOGGER.debug("Light %s subscribed to topic: %s", self._unique_id, self._state_topic)
 
     async def _message_received(self, msg) -> None:
         """Handle incoming MQTT messages and update the light state."""
         payload = msg.payload
         if isinstance(payload, bytes):
             payload = payload.decode("utf-8")
-        _LOGGER.debug("Light %s received payload: %s",
-                      self._unique_id, payload)
+        _LOGGER.debug("Light %s received payload: %s", self._unique_id, payload)
+
         if self._value_template:
             try:
                 from homeassistant.helpers.template import Template
@@ -89,38 +87,41 @@ class SmarthomeMqttLight(LightEntity):
                 except TypeError:
                     payload = tmpl_result
             except Exception as err:
-                _LOGGER.error(
-                    "Error processing value_template for light %s: %s", self._unique_id, err)
-        # Update the internal state based on the payload.
-        # Here we assume that payloads like "ON", "on", "true" (or equivalent) mean the light is on.
-        self._state = payload.lower() in ["on", "true", "1"]
+                _LOGGER.error("Error processing value_template for light %s: %s", self._unique_id, err)
+
+        # Here '1' means ON and '0' means OFF.
+        payload = payload.strip()
+        if payload == "1":
+            self._state = True
+        elif payload == "0":
+            self._state = False
+        else:
+            _LOGGER.error("Unexpected payload for light %s: %s", self._unique_id, payload)
         self.async_write_ha_state()
 
     async def async_turn_on(self, **kwargs):
-        """Turn the light on by publishing to the MQTT command topic."""
+        """Turn the light on by publishing '1' to the MQTT command topic."""
         await async_publish(
             self._hass,
             self._command_topic,
-            "ON",
+            "1",
             qos=1,
         )
         self._state = True
         self.async_write_ha_state()
-        _LOGGER.debug("Light %s turned on, published to %s",
-                      self._unique_id, self._command_topic)
+        _LOGGER.debug("Light %s turned on, published '1' to %s", self._unique_id, self._command_topic)
 
     async def async_turn_off(self, **kwargs):
-        """Turn the light off by publishing to the MQTT command topic."""
+        """Turn the light off by publishing '0' to the MQTT command topic."""
         await async_publish(
             self._hass,
             self._command_topic,
-            "OFF",
+            "0",
             qos=1,
         )
         self._state = False
         self.async_write_ha_state()
-        _LOGGER.debug("Light %s turned off, published to %s",
-                      self._unique_id, self._command_topic)
+        _LOGGER.debug("Light %s turned off, published '0' to %s", self._unique_id, self._command_topic)
 
     async def async_will_remove_from_hass(self) -> None:
         """Clean up the MQTT subscription when the light is removed."""
@@ -144,7 +145,7 @@ class SmarthomeMqttLight(LightEntity):
 
     @property
     def supported_features(self) -> int:
-        """Return the supported features. For now, no extra features are provided."""
+        """Return the supported features. Currently, no additional features are provided."""
         return 0
 
     @property
