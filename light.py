@@ -72,15 +72,8 @@ class SmarthomeMqttLight(LightEntity):
 
     async def _message_received(self, msg) -> None:
         """Handle incoming MQTT messages and update the light state."""
-        payload = msg.payload
-
-        # Convert payload to string regardless of its original type.
-        if isinstance(payload, bytes):
-            payload = payload.decode("utf-8")
-        else:
-            payload = str(payload)
-
-        payload = payload.strip()
+        # Convert the payload to a string and strip any whitespace.
+        payload = str(msg.payload).strip()
         _LOGGER.debug("Light %s received payload: %s", self._unique_id, payload)
 
         if self._value_template:
@@ -95,7 +88,7 @@ class SmarthomeMqttLight(LightEntity):
             except Exception as err:
                 _LOGGER.error("Error processing value_template for light %s: %s", self._unique_id, err)
 
-        # Here '1' means ON and '0' means OFF.
+        # Interpret MQTT payloads: "1" means ON and "0" means OFF.
         if payload == "1":
             self._state = True
         elif payload == "0":
