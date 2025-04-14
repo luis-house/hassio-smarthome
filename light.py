@@ -73,26 +73,26 @@ class SmarthomeMqttLight(LightEntity):
     async def _message_received(self, msg) -> None:
         """Handle incoming MQTT messages and update the light state."""
         # Convert the payload to a string regardless of type, then remove extra whitespace.
-        payload = str(msg.payload).strip()
+        payload = msg.payload
         _LOGGER.debug("Light %s received payload: %s", self._unique_id, payload)
 
-        # Process the payload with the value template if one is provided.
-        if self._value_template:
-            try:
-                tmpl = Template(self._value_template, hass=self._hass)
-                tmpl_result = tmpl.async_render({"value": payload})
-                try:
-                    payload = await tmpl_result
-                except TypeError:
-                    payload = tmpl_result
-                payload = str(payload).strip()
-            except Exception as err:
-                _LOGGER.error("Error processing value_template for light %s: %s", self._unique_id, err)
+        # # Process the payload with the value template if one is provided.
+        # if self._value_template:
+        #     try:
+        #         tmpl = Template(self._value_template, hass=self._hass)
+        #         tmpl_result = tmpl.async_render({"value": payload})
+        #         try:
+        #             payload = await tmpl_result
+        #         except TypeError:
+        #             payload = tmpl_result
+        #         payload = str(payload).strip()
+        #     except Exception as err:
+        #         _LOGGER.error("Error processing value_template for light %s: %s", self._unique_id, err)
 
         # Interpret the MQTT payload: "1" means ON and "0" means OFF.
-        if payload == "1":
+        if payload == 1:
             self._state = True
-        elif payload == "0":
+        elif payload == 0:
             self._state = False
         else:
             _LOGGER.error("Unexpected payload for light %s: %s", self._unique_id, payload)
