@@ -50,7 +50,7 @@ class SmarthomeMqttLight(LightEntity):
         self._hass = hass
         self._module_id = module_id
         self._relay_index = relay_index
-        self._value_template = value_template  # May be empty if not used.
+        self._value_template = value_template  # May be an empty string.
         self._state = False
 
         self._unique_id = f"smarthome.modules.{module_id}.lights.{relay_index}"
@@ -72,36 +72,53 @@ class SmarthomeMqttLight(LightEntity):
 
     async def _message_received(self, msg) -> None:
         """Handle incoming MQTT messages and update the light state."""
-        # Convert the payload to a string regardless of type, then remove extra whitespace.
-        payload = msg.payload
-        _LOGGER.debug("Light %s received payload: %s", self._unique_id, payload)
+        # Immediately convert payload to a string, regardless of its original type.
+        payload = str(msg.payload).strip()
+        _LOGGER.debug("Light %s received raw payload: %s", self._unique_id, payload)
 
-        # # Process the payload with the value template if one is provided.
-        # if self._value_template:
-        #     try:
-        #         tmpl = Template(self._value_template, hass=self._hass)
-        #         tmpl_result = tmpl.async_render({"value": payload})
-        #         try:
-        #             payload = await tmpl_result
-        #         except TypeError:
-        #             payload = tmpl_result
-        #         payload = str(payload).strip()
-        #     except Exception as err:
-        #         _LOGGER.error("Error processing value_template for light %s: %s", self._unique_id, err)
+        # Process the payload through the value template if provided.
+        if self._value_template:
+            try:
+                tmpl = Template(self._value_template, hass=self._hass)
+                tmpl_result = tmpl.async_render({"value": payload})
+                try:
+                    payload = await tmpl_result
+                except TypeError:
+                    payload = tmpl_result
+                payload = str(payload).strip()
+            except Exception as err:
+                _LOGGER.error("Error processing value_template for light %s: %s", self._unique_id, err)
 
-        # Interpret the MQTT payload: "1" means ON and "0" means OFF.
-        if payload == 1:
-            self._state = True
-        elif payload == 0:
-            self._state = False
+        _LOGGER.debug("Light %s processed payload: %s", self._unique_id, payload)
+
+        # Try to convert payload to integer for robust comparison.
+        try:
+            numeric_payload = int(payload)
+        except ValueError:
+            numeric_payload = None
+
+        if numeric_payload is not None:
+            if numeric_payload == 1:
+                self._state = True
+            elif numeric_payload == 0:
+                self._state = False
+            else:
+                _LOGGER.error("Unexpected numeric payload for light %s: %s", self._unique_id, payload)
         else:
-            _LOGGER.error("Unexpected payload for light %s: %s", self._unique_id, payload)
+            # Fallback: compare as a string.
+            if payload == "1":
+                self._state = True
+            elif payload == "0":
+                self._state = False
+            else:
+                _LOGGER.error("Unexpected payload for light %s: %s", self._unique_id, payload)
+
         self.async_write_ha_state()
 
     async def async_turn_on(self, **kwargs):
         """Turn the light on by publishing '1' to the MQTT command topic.
         
-        The state will update once the MQTT device publishes the new state.
+        The state update will occur when the device publishes its new state.
         """
         await async_publish(
             self._hass,
@@ -114,7 +131,7 @@ class SmarthomeMqttLight(LightEntity):
     async def async_turn_off(self, **kwargs):
         """Turn the light off by publishing '0' to the MQTT command topic.
         
-        The state will update once the MQTT device publishes the new state.
+        The state update will occur when the device publishes its new state.
         """
         await async_publish(
             self._hass,
