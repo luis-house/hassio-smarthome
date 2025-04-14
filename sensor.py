@@ -17,9 +17,9 @@ async def async_setup_entry(
 ):
     """
     Set up Smarthome sensor entities for the module (Hub) based on the config entry.
-    
+
     This platform now creates only button sensor entities.
-    
+
     Expected configuration keys:
       - module_id: The index of the module.
       - button_count: How many button sensors to create.
@@ -43,11 +43,11 @@ class SmarthomeMqttSensor(SensorEntity):
     def __init__(self, hass: HomeAssistant, module_id: int, sensor_index: int, value_template: str) -> None:
         """
         Initialize the sensor for a given module and button index.
-        
+
         :param hass: Home Assistant object.
         :param module_id: The ID of the module/hub.
         :param sensor_index: The index of the button sensor.
-        :param value_template: Template for processing the MQTT payload.
+        :param value_template: Template for processing MQTT payloads.
         """
         self._hass = hass
         self._module_id = module_id
@@ -55,7 +55,7 @@ class SmarthomeMqttSensor(SensorEntity):
         self._value_template = value_template
         self._state = None
 
-        # Setup identifiers and topics specifically for buttons.
+        # Setup identifiers and topics specific to buttons.
         self._unique_id = f"smarthome.modules.{module_id}.buttons.{sensor_index}"
         self._state_topic = f"modules/{module_id}/buttons/{sensor_index}"
         self._name = f"Module {module_id} Button {sensor_index}"
@@ -73,7 +73,7 @@ class SmarthomeMqttSensor(SensorEntity):
         _LOGGER.debug("Sensor %s subscribed to topic: %s", self._unique_id, self._state_topic)
 
     async def _message_received(self, msg) -> None:
-        """Handle new MQTT messages and update the sensor state."""
+        """Handle new MQTT messages, update the sensor state, and fire a device trigger event on button press."""
         payload = msg.payload
         if isinstance(payload, bytes):
             payload = payload.decode("utf-8")
@@ -92,8 +92,14 @@ class SmarthomeMqttSensor(SensorEntity):
         self._state = payload
         self.async_write_ha_state()
 
+        # Fire a custom event if the payload indicates the button was pressed.
+        if str(payload).lower() == "pressed":
+            _LOGGER.debug("Sensor %s detected a button press event.", self._unique_id)
+            # Fire event with entity_id so that device triggers can reference this sensor.
+            self._hass.bus.async_fire("smarthome_button_pressed", {"entity_id": self.entity_id})
+
     async def async_will_remove_from_hass(self) -> None:
-        """Clean up the MQTT subscription when the sensor is removed."""
+        """Clean up MQTT subscription when the sensor is removed."""
         if self._unsubscribe_mqtt is not None:
             self._unsubscribe_mqtt()
 
