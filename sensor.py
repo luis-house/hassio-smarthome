@@ -93,7 +93,7 @@ class SmarthomeMqttSensor(SensorEntity):
         self.async_write_ha_state()
 
         # Fire a custom event if the payload indicates the button was pressed.
-        if str(payload).strip() == "1":
+        if payload == 1:
             _LOGGER.debug("Sensor %s detected a button press event.", self._unique_id)
             # Fire event with entity_id so that device triggers can reference this sensor.
             self._hass.bus.async_fire("smarthome_button_pressed", {"entity_id": self.entity_id})
