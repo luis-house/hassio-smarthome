@@ -1,7 +1,7 @@
 """Light platform for the Smarthome custom integration."""
 import logging
 
-from homeassistant.components.light import LightEntity
+from homeassistant.components.light import ColorMode, LightEntity
 from homeassistant.components.mqtt import async_subscribe, async_publish
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -147,6 +147,16 @@ class SmarthomeMqttLight(LightEntity):
     def is_on(self) -> bool:
         """Return True if the light is on."""
         return self._state
+
+    @property
+    def color_mode(self) -> ColorMode:
+        """Return the color mode of the light."""
+        return ColorMode.ONOFF
+
+    @property
+    def supported_color_modes(self) -> set[ColorMode]:
+        """Return the supported color modes."""
+        return {ColorMode.ONOFF}
 
     @property
     def supported_features(self) -> int:
