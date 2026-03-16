@@ -1,0 +1,47 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add Smarthome Module",
+        "description": "Configure a single Smarthome module (hub). Each module can have relay lights and/or button inputs.",
+        "data": {
+          "module_id": "Module ID",
+          "relay_count": "Number of relays",
+          "button_count": "Number of buttons",
+          "value_template": "Value template"
+        },
+        "data_description": {
+          "module_id": "Numeric ID of the module, as configured on the hardware.",
+          "relay_count": "How many relay-controlled lights this module has (0 if none).",
+          "button_count": "How many physical button inputs this module has (0 if none).",
+          "value_template": "Jinja2 template applied to every incoming MQTT payload. Use {{ value }} to pass the payload through unchanged."
+        }
+      }
+    },
+    "error": {
+      "invalid_module_id": "Module ID must be a non-negative integer.",
+      "invalid_relay_count": "Relay count cannot be negative.",
+      "invalid_button_count": "Button count cannot be negative.",
+      "no_entities": "At least one of relay count or button count must be greater than 0.",
+      "invalid_input": "Invalid input. Please check your entries."
+    }
+  },
+  "options": {
+    "step": {
+      "user": {
+        "title": "Button-to-Relay Mapping",
+        "description": "Define which relay lights are toggled when a button is pressed. Keys are button indices, values are relay indices (single integer) or a list of relay indices.",
+        "data": {
+          "mapping": "Mapping (YAML)"
+        },
+        "data_description": {
+          "mapping": "Example:\n  0: 0\n  1: [0, 1]"
+        }
+      }
+    },
+    "error": {
+      "invalid_yaml": "Invalid YAML format. Please check the syntax.",
+      "not_a_dict": "Mapping must be a YAML dictionary (key: value pairs)."
+    }
+  }
+}

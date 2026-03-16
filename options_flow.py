@@ -1,3 +1,4 @@
+"""Options flow for the Smarthome custom integration."""
 import logging
 import yaml
 import voluptuous as vol
@@ -7,73 +8,59 @@ from homeassistant.helpers.selector import (
     TextSelectorConfig,
     TextSelectorType,
 )
-import homeassistant.helpers.config_validation as cv
-
-from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-# Default YAML template shown in the options form if no mapping is set.
 DEFAULT_MAPPING_YAML = """\
 # Enter your button-to-relay mapping here.
 # Example:
-# 12: 4
-# 15: [4, 5]
+# 0: 0
+# 1: [0, 1]
 """
 
 
 class SmarthomeOptionsFlow(config_entries.OptionsFlow):
-    """Handle Options Flow for the Smarthome integration."""
+    """Handle the options flow for the Smarthome integration."""
 
     async def async_step_init(self, user_input=None):
-        """Manage the options flow start."""
+        """Delegate to the user step."""
         return await self.async_step_user(user_input)
 
-    async def async_step_user(self, user_input):
-        """Handle options flow step where mapping can be edited."""
+    async def async_step_user(self, user_input=None):
+        """Handle the options step where the button-to-relay mapping is edited."""
         errors = {}
 
-        # Determine the default mapping YAML to display.
         current_mapping = self.config_entry.options.get("mapping")
         if current_mapping is None:
             default_mapping = DEFAULT_MAPPING_YAML
         else:
             try:
-                # Convert the current mapping dictionary to a YAML string.
-                default_mapping = yaml.safe_dump(
-                    current_mapping, default_flow_style=False)
+                default_mapping = yaml.safe_dump(current_mapping, default_flow_style=False)
             except Exception as err:
-                _LOGGER.error("Error dumping mapping to YAML: %s", err)
+                _LOGGER.error("Error serialising mapping to YAML: %s", err)
                 default_mapping = DEFAULT_MAPPING_YAML
 
-        # Use the text selector with multiline enabled
-        schema = vol.Schema(
-            {vol.Required("mapping", default=default_mapping): TextSelector(
-                TextSelectorConfig(
-                    type=TextSelectorType.TEXT,
-                    multiline=True,
-                )
-            )}
-        )
+        schema = vol.Schema({
+            vol.Required("mapping", default=default_mapping): TextSelector(
+                TextSelectorConfig(type=TextSelectorType.TEXT, multiline=True)
+            )
+        })
 
         if user_input is not None:
-            mapping_str = user_input.get("mapping")
+            mapping_str = user_input.get("mapping", "")
             try:
                 mapping_data = yaml.safe_load(mapping_str)
                 if not isinstance(mapping_data, dict):
-                    errors["mapping"] = "Mapping must be a YAML dictionary."
+                    errors["mapping"] = "not_a_dict"
             except Exception as exc:
                 _LOGGER.error("Error parsing YAML mapping: %s", exc)
-                errors["mapping"] = "Invalid YAML format."
+                errors["mapping"] = "invalid_yaml"
 
-            if errors:
-                return self.async_show_form(
-                    step_id="user", data_schema=schema, errors=errors
-                )
-
-            # If input is valid, update the options.
-            return self.async_create_entry(data={"mapping": mapping_data})
+            if not errors:
+                return self.async_create_entry(data={"mapping": mapping_data})
 
         return self.async_show_form(
-            step_id="user", data_schema=schema, errors=errors
+            step_id="user",
+            data_schema=schema,
+            errors=errors,
         )
