@@ -159,11 +159,6 @@ class SmarthomeMqttLight(LightEntity):
         return {ColorMode.ONOFF}
 
     @property
-    def supported_features(self) -> int:
-        """Return the supported features. No extra features are supported in this integration."""
-        return 0
-
-    @property
     def device_info(self):
         """Return device information for the light."""
         device = DEFAULT_RELAY_DEVICE
