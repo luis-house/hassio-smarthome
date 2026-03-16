@@ -114,7 +114,7 @@ class SmarthomeMqttSensor(SensorEntity):
         return self._unique_id
 
     @property
-    def state(self):
+    def native_value(self):
         """Return the current state of the sensor."""
         return self._state
 

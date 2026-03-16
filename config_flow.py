@@ -24,7 +24,7 @@ class SmarthomeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(config_entry):
         """Return the options flow for the hassio_smarthome integration."""
         from .options_flow import SmarthomeOptionsFlow
-        return SmarthomeOptionsFlow(config_entry)
+        return SmarthomeOptionsFlow()
 
     async def async_step_user(self, user_input=None):
         """Handle the initial step of the config flow."""
